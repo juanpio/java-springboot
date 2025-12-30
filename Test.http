@@ -1,0 +1,331 @@
+### Spring Boot Microservices API Tests
+### Base URL: http://localhost:8080 (API Gateway)
+
+#####################################
+### AUTHENTICATION (User Service) ###
+#####################################
+
+### Register a new user
+POST http://localhost:8080/api/auth/signup
+Content-Type: application/json
+
+{
+  "username": "john_doe",
+  "email": "john@example.com",
+  "password": "SecurePass123!"
+}
+
+### Login and get JWT token
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "john_doe",
+  "password": "SecurePass123!"
+}
+
+### Register another user
+POST http://localhost:8080/api/auth/signup
+Content-Type: application/json
+
+{
+  "username": "jane_smith",
+  "email": "jane@example.com",
+  "password": "SecurePass456!"
+}
+
+### Login as second user
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "jane_smith",
+  "password": "SecurePass456!"
+}
+
+#####################################
+###      USER SERVICE APIs        ###
+#####################################
+
+### Get all users (requires authentication)
+GET http://localhost:8080/api/users
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.YOUR_TOKEN_HERE
+
+### Get user by ID
+GET http://localhost:8080/api/users/1
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.YOUR_TOKEN_HERE
+
+### Update user
+PUT http://localhost:8080/api/users/1
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.YOUR_TOKEN_HERE
+
+{
+  "username": "john_doe_updated",
+  "email": "john.updated@example.com"
+}
+
+### Delete user
+DELETE http://localhost:8080/api/users/1
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.YOUR_TOKEN_HERE
+
+#####################################
+###    PRODUCT SERVICE APIs       ###
+#####################################
+
+### Create a new product
+POST http://localhost:8080/api/products
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.YOUR_TOKEN_HERE
+
+{
+  "name": "Laptop",
+  "description": "High-performance laptop for developers",
+  "price": 1299.99,
+  "quantity": 50,
+  "category": "Electronics",
+  "imageUrl": "https://example.com/laptop.jpg"
+}
+
+### Create another product
+POST http://localhost:8080/api/products
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.YOUR_TOKEN_HERE
+
+{
+  "name": "Wireless Mouse",
+  "description": "Ergonomic wireless mouse",
+  "price": 29.99,
+  "quantity": 200,
+  "category": "Accessories",
+  "imageUrl": "https://example.com/mouse.jpg"
+}
+
+### Create third product
+POST http://localhost:8080/api/products
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.YOUR_TOKEN_HERE
+
+{
+  "name": "Mechanical Keyboard",
+  "description": "RGB mechanical keyboard with Cherry MX switches",
+  "price": 149.99,
+  "quantity": 100,
+  "category": "Accessories",
+  "imageUrl": "https://example.com/keyboard.jpg"
+}
+
+### Get all products
+GET http://localhost:8080/api/products
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.YOUR_TOKEN_HERE
+
+### Get product by ID
+GET http://localhost:8080/api/products/1
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.YOUR_TOKEN_HERE
+
+### Search products by name
+GET http://localhost:8080/api/products/search?name=Laptop
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.YOUR_TOKEN_HERE
+
+### Get products by category
+GET http://localhost:8080/api/products/category/Electronics
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.YOUR_TOKEN_HERE
+
+### Update product
+PUT http://localhost:8080/api/products/1
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.YOUR_TOKEN_HERE
+
+{
+  "name": "Gaming Laptop",
+  "description": "High-performance gaming laptop with RTX 4080",
+  "price": 1899.99,
+  "quantity": 30,
+  "category": "Electronics",
+  "imageUrl": "https://example.com/gaming-laptop.jpg"
+}
+
+### Update product stock
+PATCH http://localhost:8080/api/products/1/stock?quantity=75
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.YOUR_TOKEN_HERE
+
+### Delete product
+DELETE http://localhost:8080/api/products/1
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.YOUR_TOKEN_HERE
+
+#####################################
+###     ORDER SERVICE APIs        ###
+#####################################
+
+### Create order with single item
+POST http://localhost:8080/api/orders
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.YOUR_TOKEN_HERE
+
+{
+  "userId": 1,
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 1,
+      "price": 1299.99
+    }
+  ]
+}
+
+### Create order with multiple items
+POST http://localhost:8080/api/orders
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.YOUR_TOKEN_HERE
+
+{
+  "userId": 1,
+  "items": [
+    {
+      "productId": 2,
+      "quantity": 2,
+      "price": 29.99
+    },
+    {
+      "productId": 3,
+      "quantity": 1,
+      "price": 149.99
+    }
+  ]
+}
+
+### Get all orders
+GET http://localhost:8080/api/orders
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.YOUR_TOKEN_HERE
+
+### Get order by ID
+GET http://localhost:8080/api/orders/1
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.YOUR_TOKEN_HERE
+
+### Get orders by user ID
+GET http://localhost:8080/api/orders/user/1
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.YOUR_TOKEN_HERE
+
+### Get orders by status
+GET http://localhost:8080/api/orders/status/PENDING
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.YOUR_TOKEN_HERE
+
+### Update order status to PROCESSING
+PUT http://localhost:8080/api/orders/1/status
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.YOUR_TOKEN_HERE
+
+{
+  "status": "PROCESSING"
+}
+
+### Update order status to SHIPPED
+PUT http://localhost:8080/api/orders/1/status
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.YOUR_TOKEN_HERE
+
+{
+  "status": "SHIPPED"
+}
+
+### Update order status to DELIVERED
+PUT http://localhost:8080/api/orders/1/status
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.YOUR_TOKEN_HERE
+
+{
+  "status": "DELIVERED"
+}
+
+### Cancel an order (only works for PENDING orders)
+DELETE http://localhost:8080/api/orders/2
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.YOUR_TOKEN_HERE
+
+#####################################
+###    DIRECT SERVICE ACCESS      ###
+###   (Bypassing API Gateway)     ###
+#####################################
+
+### Direct access to Eureka Server
+GET http://localhost:8761/
+
+### Direct access to User Service
+GET http://localhost:8081/api/users
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.YOUR_TOKEN_HERE
+
+### Direct access to Product Service
+GET http://localhost:8082/api/products
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.YOUR_TOKEN_HERE
+
+### Direct access to Order Service
+GET http://localhost:8083/api/orders
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.YOUR_TOKEN_HERE
+
+#####################################
+###       HEALTH CHECKS           ###
+#####################################
+
+### Eureka Server Health
+GET http://localhost:8761/actuator/health
+
+### API Gateway Health
+GET http://localhost:8080/actuator/health
+
+### User Service Health
+GET http://localhost:8081/actuator/health
+
+### Product Service Health
+GET http://localhost:8082/actuator/health
+
+### Order Service Health
+GET http://localhost:8083/actuator/health
+
+#####################################
+###    CIRCUIT BREAKER TESTS      ###
+#####################################
+
+### Test order creation when services are up
+POST http://localhost:8080/api/orders
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.YOUR_TOKEN_HERE
+
+{
+  "userId": 1,
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 1,
+      "price": 1299.99
+    }
+  ]
+}
+
+### Instructions for Circuit Breaker Testing:
+### 1. Stop the product service: docker stop product-service
+### 2. Try creating an order (should trigger circuit breaker)
+### 3. Restart the service: docker start product-service
+### 4. Wait for circuit breaker to recover
+### 5. Try creating an order again
+
+#####################################
+###         NOTES                 ###
+#####################################
+
+# Replace YOUR_TOKEN_HERE with actual JWT token from login response
+# Token format: eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ1c2VybmFtZSIsImlhdCI6MTY3ODk4NzY1NCwiZXhwIjoxNjc5MDc0MDU0fQ...
+# 
+# Order Status Values: PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED
+# 
+# To use this file:
+# - In VS Code: Install "REST Client" extension
+# - In IntelliJ IDEA: Built-in support for .http files
+# - Click "Send Request" above each request to execute
+# 
+# Workflow Example:
+# 1. Register a user (signup)
+# 2. Login to get JWT token
+# 3. Copy the token and replace YOUR_TOKEN_HERE in subsequent requests
+# 4. Create products
+# 5. Create orders
+# 6. Update order status
+# 7. Query orders by status/user
