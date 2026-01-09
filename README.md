@@ -6,9 +6,15 @@ This project is a microservice built using Spring Boot that includes an orchestr
 - Built with Spring Boot for rapid development and easy deployment.
 - Orchestration layer to manage and coordinate multiple services.
 - RESTful APIs for communication between services.
+- **OpenAPI/Swagger Documentation** - Interactive API documentation for all services.
+- **API Versioning** - Versioned endpoints (`/api/v1/`) for backward compatibility.
+- **Standardized API Responses** - Consistent response wrappers with success/error metadata.
+- **Custom Domain Exceptions** - Type-safe exception handling with proper HTTP status codes.
+- **MapStruct DTO Mapping** - Compile-time type-safe object mapping.
+- **Constructor-based Dependency Injection** - Immutable dependencies for better testability.
 - Easy to extend and integrate with additional services.
-- Configurable via application properties.
-- Built-in error handling and logging.
+- Configurable via application properties with externalized sensitive configuration.
+- Built-in error handling and logging with request tracing.
 - Security features to protect service endpoints, with JWT authentication and role-based access control.
 - Resilience features such as circuit breakers and retries using Resilience4j (modern replacement for deprecated Hystrix).
 
@@ -21,7 +27,11 @@ This project is a microservice built using Spring Boot that includes an orchestr
 - Spring Data JPA
 - Resilience4j (Circuit Breaker, Retry)
 - OpenFeign (Inter-service communication)
-- H2 Database (Development)
+- **SpringDoc OpenAPI 2.3.0** - API Documentation & Swagger UI
+- **MapStruct 1.5.5.Final** - Object Mapping
+- **Jakarta Bean Validation** - Request/Response validation
+- PostgreSQL (Production)
+- H2 Database (Development/Testing)
 - Maven
 - Docker & Docker Compose
 
@@ -37,6 +47,9 @@ This project implements a complete microservices architecture with:
 - Java 17 or higher
 - Maven 3.6 or higher
 - Docker & Docker Compose (optional, for containerization)
+- PostgreSQL (optional, for production database)
+
+**Note**: MapStruct annotation processors are configured in the POMs and will run automatically during compilation.
 
 ## Getting Started
 
@@ -101,40 +114,48 @@ This project implements a complete microservices architecture with:
 - **Product Service**: http://localhost:8082 (or via Gateway)
 - **Order Service**: http://localhost:8083 (or via Gateway)
 
+### API Documentation (Swagger UI)
+- **User Service API Docs**: http://localhost:8081/swagger-ui.html
+- **Product Service API Docs**: http://localhost:8082/swagger-ui.html
+- **Order Service API Docs**: http://localhost:8083/swagger-ui.html
+- **OpenAPI JSON**: Available at `/v3/api-docs` on each service
+
 ## API Endpoints
 
-### Authentication (User Service)
-- `POST /api/auth/signup` - Register new user
-- `POST /api/auth/login` - Login and get JWT token
+> **Note**: All endpoints use versioned paths (`/api/v1/`) for backward compatibility.
 
-### Users
-- `GET /api/users` - Get all users (ADMIN only)
-- `GET /api/users/{id}` - Get user by ID
-- `GET /api/users/username/{username}` - Get user by username
+### Authentication (User Service)
+- `POST /api/v1/auth/signup` - Register new user
+- `POST /api/v1/auth/login` - Login and get JWT token
+
+### Users (Requires Authentication)
+- `GET /api/v1/users` - Get all users (ADMIN only)
+- `GET /api/v1/users/{id}` - Get user by ID
+- `GET /api/v1/users/username/{username}` - Get user by username
 
 ### Products
-- `POST /api/products` - Create product
-- `GET /api/products` - Get all products
-- `GET /api/products/{id}` - Get product by ID
-- `GET /api/products/category/{category}` - Get products by category
-- `GET /api/products/search?name={name}` - Search products
-- `PUT /api/products/{id}` - Update product
-- `DELETE /api/products/{id}` - Delete product
-- `PATCH /api/products/{id}/stock?quantity={quantity}` - Update stock
+- `POST /api/v1/products` - Create product
+- `GET /api/v1/products` - Get all products
+- `GET /api/v1/products/{id}` - Get product by ID
+- `GET /api/v1/products/category/{category}` - Get products by category
+- `GET /api/v1/products/search?name={name}` - Search products
+- `PUT /api/v1/products/{id}` - Update product
+- `DELETE /api/v1/products/{id}` - Delete product
+- `PATCH /api/v1/products/{id}/stock?quantity={quantity}` - Update stock
 
 ### Orders
-- `POST /api/orders` - Create order
-- `GET /api/orders` - Get all orders
-- `GET /api/orders/{id}` - Get order by ID
-- `GET /api/orders/user/{userId}` - Get orders by user ID
-- `PATCH /api/orders/{id}/status?status={status}` - Update order status
-- `DELETE /api/orders/{id}` - Cancel order
+- `POST /api/v1/orders` - Create order
+- `GET /api/v1/orders` - Get all orders
+- `GET /api/v1/orders/{id}` - Get order by ID
+- `GET /api/v1/orders/user/{userId}` - Get orders by user ID
+- `PATCH /api/v1/orders/{id}/status?status={status}` - Update order status
+- `DELETE /api/v1/orders/{id}` - Cancel order
 
 ## Example Usage
 
 ### 1. Register a User
 ```bash
-curl -X POST http://localhost:8080/api/auth/signup \
+curl -X POST http://localhost:8080/api/v1/auth/signup \
   -H "Content-Type: application/json" \
   -d '{
     "username": "john_doe",
@@ -143,9 +164,21 @@ curl -X POST http://localhost:8080/api/auth/signup \
   }'
 ```
 
+**Response** (with standardized wrapper):
+```json
+{
+  "success": true,
+  "message": "Registration successful",
+  "data": {
+    "message": "User registered successfully!"
+  },
+  "timestamp": "2026-01-09T10:30:00"
+}
+```
+
 ### 2. Login
 ```bash
-curl -X POST http://localhost:8080/api/auth/login \
+curl -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "username": "john_doe",
@@ -155,7 +188,7 @@ curl -X POST http://localhost:8080/api/auth/login \
 
 ### 3. Create a Product
 ```bash
-curl -X POST http://localhost:8080/api/products \
+curl -X POST http://localhost:8080/api/v1/products \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Laptop",
@@ -168,8 +201,9 @@ curl -X POST http://localhost:8080/api/products \
 
 ### 4. Create an Order
 ```bash
-curl -X POST http://localhost:8080/api/orders \
+curl -X POST http://localhost:8080/api/v1/orders \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <jwt-token>" \
   -d '{
     "userId": 1,
     "items": [
@@ -181,7 +215,55 @@ curl -X POST http://localhost:8080/api/orders \
   }'
 ```
 
+## API Response Standards
+
+All API endpoints return standardized response structures for consistency:
+
+### Success Response
+```json
+{
+  "success": true,
+  "message": "Operation successful",
+  "data": { /* actual response data */ },
+  "timestamp": "2026-01-09T10:30:00",
+  "metadata": { /* optional metadata */ }
+}
+```
+
+### Error Response
+```json
+{
+  "timestamp": "2026-01-09T10:30:00",
+  "status": 404,
+  "errorCode": "RESOURCE_NOT_FOUND",
+  "message": "Order not found with identifier: 123",
+  "path": "/api/v1/orders/123",
+  "requestId": "uuid-here",
+  "fieldErrors": [ /* for validation errors */ ]
+}
+```
+
+### Exception Handling
+
+Custom domain exceptions provide clear error messages:
+- `ResourceNotFoundException` - HTTP 404
+- `InsufficientStockException` - HTTP 409
+- `OrderCancellationException` - HTTP 400
+- `AuthenticationException` - HTTP 401
+- `UserAlreadyExistsException` - HTTP 409
+- Validation errors return field-level details
+
 ## Features Implemented
+
+### API Best Practices
+- **OpenAPI/Swagger** - Interactive documentation at `/swagger-ui.html`
+- **API Versioning** - All endpoints versioned as `/api/v1/*`
+- **Standardized Responses** - Consistent `ApiResponse<T>` wrapper
+- **Custom Exceptions** - Domain-specific exception hierarchy
+- **DTO Mapping** - MapStruct for type-safe object mapping
+- **Constructor Injection** - Immutable dependencies
+- **Request Validation** - Jakarta Bean Validation annotations
+- **Security** - Passwords never exposed in responses (`@JsonIgnore`)
 
 ### Security
 - JWT-based authentication
@@ -230,6 +312,38 @@ SpringBoot/
 ├── order-service/          # Order Processing
 ├── docker-compose.yml      # Docker orchestration
 └── pom.xml                 # Parent POM
+```
+
+## Environment Configuration
+
+Sensitive configuration values are externalized using environment variables:
+
+### User Service
+```bash
+export DB_URL=jdbc:postgresql://localhost:5432/userdb
+export DB_USERNAME=userservice
+export DB_PASSWORD=your_secure_password
+export JWT_SECRET=your_jwt_secret_key_here
+export JWT_EXPIRATION=86400000
+```
+
+### Docker Environment
+Set environment variables in `.env` file for Docker Compose:
+```properties
+DB_PASSWORD=your_secure_password
+JWT_SECRET=your_jwt_secret_key
+```
+
+## Testing
+
+The project includes:
+- **BDD Tests** - Cucumber/Gherkin scenarios in order-service
+- **Unit Tests** - JUnit 5 with Mockito
+- **Integration Tests** - REST Assured for API testing
+
+Run tests:
+```bash
+mvn test
 ```
 
 ## Contributing
