@@ -6,10 +6,10 @@ spring:
     name: user-service
   
   datasource:
-    url: jdbc:postgresql://localhost:5432/userdb
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/userdb}
     driver-class-name: org.postgresql.Driver
-    username: userservice
-    password: userpass123
+    username: ${DB_USERNAME:userservice}
+    password: ${DB_PASSWORD:userpass123}
   
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
@@ -33,8 +33,8 @@ eureka:
     prefer-ip-address: true
 
 jwt:
-  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-  expiration: 86400000 # 24 hours
+  secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+  expiration: ${JWT_EXPIRATION:86400000} # 24 hours in milliseconds
 
 management:
   endpoints:

@@ -13,11 +13,22 @@ spring:
           lower-case-service-id: true
       
       routes:
-        # User Service Routes
-        - id: user-service
+        # User Service Routes - Authentication
+        - id: user-service-auth
           uri: lb://user-service
           predicates:
-            - Path=/api/auth/**, /api/users/**
+            - Path=/api/v1/auth/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: userService
+                fallbackUri: forward:/fallback/user-service
+        
+        # User Service Routes - User Management
+        - id: user-service-users
+          uri: lb://user-service
+          predicates:
+            - Path=/api/v1/users/**
           filters:
             - name: CircuitBreaker
               args:
@@ -28,7 +39,7 @@ spring:
         - id: product-service
           uri: lb://product-service
           predicates:
-            - Path=/api/products/**
+            - Path=/api/v1/products/**
           filters:
             - name: CircuitBreaker
               args:
@@ -39,7 +50,7 @@ spring:
         - id: order-service
           uri: lb://order-service
           predicates:
-            - Path=/api/orders/**
+            - Path=/api/v1/orders/**
           filters:
             - name: CircuitBreaker
               args:
