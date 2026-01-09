@@ -55,7 +55,14 @@
             <artifactId>jjwt-jackson</artifactId>
         </dependency>
 
-        <!-- PostgreSQL Database -->
+        <!-- H2 Database for testing -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- PostgreSQL -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>

@@ -6,10 +6,10 @@ spring:
     name: order-service
   
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:5432/orderdb
+    url: jdbc:postgresql://localhost:5434/orderdb
     driver-class-name: org.postgresql.Driver
-    username: ${DB_USER:postgres}
-    password: ${DB_PASSWORD:postgres}
+    username: orderservice
+    password: orderpass123
   
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
@@ -20,7 +20,8 @@ spring:
       hibernate:
         format_sql: true
         jdbc:
-          time_zone: UTC
+          lob:
+            non_contextual_creation: true
 
 eureka:
   client:

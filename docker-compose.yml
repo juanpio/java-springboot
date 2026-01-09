@@ -6,17 +6,17 @@ services:
     image: postgres:16-alpine
     container_name: postgres-user
     environment:
-      POSTGRES_DB: userdb
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      - POSTGRES_DB=userdb
+      - POSTGRES_USER=userservice
+      - POSTGRES_PASSWORD=userpass123
     ports:
-      - "5433:5432"
+      - "5432:5432"
     networks:
       - microservices-network
     volumes:
       - postgres-user-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d userdb"]
+      test: ["CMD-SHELL", "pg_isready -U userservice -d userdb"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -25,17 +25,17 @@ services:
     image: postgres:16-alpine
     container_name: postgres-product
     environment:
-      POSTGRES_DB: productdb
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      - POSTGRES_DB=productdb
+      - POSTGRES_USER=productservice
+      - POSTGRES_PASSWORD=productpass123
     ports:
-      - "5434:5432"
+      - "5433:5432"
     networks:
       - microservices-network
     volumes:
       - postgres-product-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d productdb"]
+      test: ["CMD-SHELL", "pg_isready -U productservice -d productdb"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -44,17 +44,17 @@ services:
     image: postgres:16-alpine
     container_name: postgres-order
     environment:
-      POSTGRES_DB: orderdb
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      - POSTGRES_DB=orderdb
+      - POSTGRES_USER=orderservice
+      - POSTGRES_PASSWORD=orderpass123
     ports:
-      - "5435:5432"
+      - "5434:5432"
     networks:
       - microservices-network
     volumes:
       - postgres-order-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d orderdb"]
+      test: ["CMD-SHELL", "pg_isready -U orderservice -d orderdb"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -111,9 +111,11 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
-      - DB_HOST=postgres-user
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-user:5432/userdb
+      - SPRING_DATASOURCE_USERNAME=userservice
+      - SPRING_DATASOURCE_PASSWORD=userpass123
+      - SPRING_DATASOURCE_DRIVER-CLASS-NAME=org.postgresql.Driver
+      - SPRING_JPA_DATABASE-PLATFORM=org.hibernate.dialect.PostgreSQLDialect
     depends_on:
       eureka-server:
         condition: service_healthy
@@ -138,9 +140,11 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
-      - DB_HOST=postgres-product
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-product:5432/productdb
+      - SPRING_DATASOURCE_USERNAME=productservice
+      - SPRING_DATASOURCE_PASSWORD=productpass123
+      - SPRING_DATASOURCE_DRIVER-CLASS-NAME=org.postgresql.Driver
+      - SPRING_JPA_DATABASE-PLATFORM=org.hibernate.dialect.PostgreSQLDialect
     depends_on:
       eureka-server:
         condition: service_healthy
@@ -165,17 +169,19 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
-      - DB_HOST=postgres-order
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-order:5432/orderdb
+      - SPRING_DATASOURCE_DRIVER-CLASS-NAME=org.postgresql.Driver
+      - SPRING_JPA_DATABASE-PLATFORM=org.hibernate.dialect.PostgreSQLDialect
+      - SPRING_DATASOURCE_USERNAME=orderservice
+      - SPRING_DATASOURCE_PASSWORD=orderpass123
     depends_on:
       eureka-server:
+        condition: service_healthy
+      postgres-order:
         condition: service_healthy
       user-service:
         condition: service_healthy
       product-service:
-        condition: service_healthy
-      postgres-order:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8083/actuator/health"]
@@ -192,3 +198,4 @@ volumes:
   postgres-user-data:
   postgres-product-data:
   postgres-order-data:
+

@@ -1,0 +1,60 @@
+# Docker Compose file for running only PostgreSQL databases locally
+# Use this when you want to run services locally but with persistent PostgreSQL databases
+# Usage: docker-compose -f docker-compose-postgres.yml up -d
+
+services:
+  postgres-user:
+    image: postgres:16-alpine
+    container_name: postgres-user
+    environment:
+      - POSTGRES_DB=userdb
+      - POSTGRES_USER=userservice
+      - POSTGRES_PASSWORD=userpass123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-user-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U userservice -d userdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-product:
+    image: postgres:16-alpine
+    container_name: postgres-product
+    environment:
+      - POSTGRES_DB=productdb
+      - POSTGRES_USER=productservice
+      - POSTGRES_PASSWORD=productpass123
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-product-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U productservice -d productdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-order:
+    image: postgres:16-alpine
+    container_name: postgres-order
+    environment:
+      - POSTGRES_DB=orderdb
+      - POSTGRES_USER=orderservice
+      - POSTGRES_PASSWORD=orderpass123
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres-order-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orderservice -d orderdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-user-data:
+  postgres-product-data:
+  postgres-order-data:
