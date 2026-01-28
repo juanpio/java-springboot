@@ -36,12 +36,249 @@ This project is a microservice built using Spring Boot that includes an orchestr
 - Docker & Docker Compose
 
 ## Architecture
+
 This project implements a complete microservices architecture with:
 - **Eureka Server** (Port 8761): Service discovery and registration
 - **API Gateway** (Port 8080): Single entry point with routing, load balancing, and circuit breakers
 - **User Service** (Port 8081): User management with JWT authentication
 - **Product Service** (Port 8082): Product catalog management
 - **Order Service** (Port 8083): Order processing with inter-service communication
+
+### Architecture Diagram
+```
+┌─────────────┐
+│   Client    │
+└──────┬──────┘
+       │
+       ▼
+┌─────────────────────────────────────────────┐
+│          API Gateway (Port 8080)            │
+│  - Request Routing                          │
+│  - Load Balancing                           │
+│  - Circuit Breakers                         │
+│  - CORS Configuration                       │
+└────┬────────────┬────────────┬──────────────┘
+     │            │            │
+     ▼            ▼            ▼
+┌─────────┐  ┌─────────┐  ┌─────────┐
+│  User   │  │ Product │  │  Order  │
+│ Service │  │ Service │  │ Service │
+│  :8081  │  │  :8082  │  │  :8083  │
+└────┬────┘  └────┬────┘  └────┬────┘
+     │            │            │
+     └────────────┴────────────┘
+                  │
+                  ▼
+         ┌────────────────┐
+         │ Eureka Server  │
+         │  (Discovery)   │
+         │     :8761      │
+         └────────────────┘
+```
+
+## Architectural Decisions
+
+### Why Service Discovery (Eureka)?
+
+**Problem**: In a microservices architecture, services need to communicate with each other. Hardcoding service URLs creates several issues:
+- Services may scale up/down dynamically (multiple instances)
+- Service locations may change (different ports/hosts)
+- Manual configuration becomes error-prone and unmanageable
+
+**Solution**: Spring Cloud Netflix Eureka provides service discovery:
+- **Dynamic Service Registration**: Services automatically register themselves on startup
+- **Health Monitoring**: Eureka tracks which service instances are healthy
+- **Load Distribution**: Client-side load balancing across multiple instances
+- **Fault Tolerance**: Automatically removes unhealthy instances from the registry
+- **No Hardcoded URLs**: Services discover each other by logical name (e.g., `user-service`)
+
+**Benefits**:
+- **Zero Configuration**: Services find each other automatically
+- **Auto-Scaling Support**: New instances are discovered immediately
+- **Development Simplicity**: Same code works in dev, staging, and production
+- **Resilience**: System adapts to service failures and recoveries
+
+### Why API Gateway?
+
+**Problem**: Without a gateway, clients must:
+- Know the address of every microservice
+- Handle cross-cutting concerns (auth, logging) in each service
+- Deal with network complexity and protocol differences
+- Manage versioning across multiple services
+
+**Solution**: Spring Cloud Gateway provides a single entry point:
+- **Single Entry Point**: Clients connect to one URL (`:8080`)
+- **Request Routing**: Routes `/api/v1/users/**` → User Service, `/api/v1/products/**` → Product Service
+- **Load Balancing**: Distributes requests across service instances
+- **Circuit Breakers**: Prevents cascading failures with fallback responses
+- **Security**: Centralized authentication and authorization
+- **CORS Management**: Unified cross-origin configuration
+- **Rate Limiting**: Protects services from overload
+- **Protocol Translation**: Can handle REST → gRPC, HTTP → WebSocket
+
+**Benefits**:
+- **Simplified Client Code**: Frontend only needs one endpoint
+- **Security**: Single point for authentication/authorization
+- **Monitoring**: Centralized logging and metrics collection
+- **Flexibility**: Change backend services without affecting clients
+- **Performance**: Request/response caching and compression
+
+### Why Circuit Breakers (Resilience4j)?
+
+**Problem**: Service failures can cascade:
+- If Order Service calls Product Service and it's down, requests pile up
+- Threads block waiting for timeouts
+- Eventually, Order Service becomes unresponsive
+- The entire system can collapse from a single service failure
+
+**Solution**: Resilience4j Circuit Breakers prevent cascading failures:
+- **Fail Fast**: Immediately return fallback when service is down
+- **Auto-Recovery**: Periodically tests if failed service is healthy again
+- **Thread Protection**: Prevents resource exhaustion from waiting on dead services
+- **Graceful Degradation**: System continues functioning with reduced features
+
+**States**:
+1. **CLOSED**: Normal operation, requests pass through
+2. **OPEN**: Service is failing, requests fail immediately with fallback
+3. **HALF_OPEN**: Testing if service recovered, allows limited requests
+
+**Benefits**:
+- **System Stability**: One failing service doesn't crash the entire system
+- **Better UX**: Users get quick fallback responses instead of timeouts
+- **Resource Protection**: Prevents thread exhaustion and memory leaks
+- **Automatic Recovery**: System self-heals when services come back online
+
+### Why OpenFeign for Inter-Service Communication?
+
+**Problem**: Making HTTP calls between services requires boilerplate:
+```java
+// Without Feign - lots of boilerplate
+RestTemplate restTemplate = new RestTemplate();
+HttpHeaders headers = new HttpHeaders();
+headers.set("Content-Type", "application/json");
+HttpEntity<String> entity = new HttpEntity<>(headers);
+ResponseEntity<User> response = restTemplate.exchange(
+    "http://user-service/api/v1/users/" + userId,
+    HttpMethod.GET,
+    entity,
+    User.class
+);
+```
+
+**Solution**: OpenFeign provides declarative REST clients:
+```java
+// With Feign - clean and simple
+@FeignClient(name = "user-service")
+public interface UserClient {
+    @GetMapping("/api/v1/users/{id}")
+    UserDTO getUserById(@PathVariable Long id);
+}
+```
+
+**Benefits**:
+- **Declarative**: Define interface, Feign generates implementation
+- **Integration**: Works seamlessly with Eureka for service discovery
+- **Load Balancing**: Built-in client-side load balancing
+- **Retry Logic**: Automatic retry on failures
+- **Less Code**: Reduces boilerplate by 80%+
+- **Type Safety**: Compile-time checking of API contracts
+
+### Why JWT Authentication?
+
+**Problem**: Traditional session-based auth doesn't scale in microservices:
+- Sessions require shared state (Redis, database)
+- Each service needs access to session storage
+- Horizontal scaling becomes complex
+
+**Solution**: JWT (JSON Web Tokens) provide stateless authentication:
+- **Self-Contained**: Token contains all user information (username, roles)
+- **Stateless**: No need for session storage or database lookups
+- **Distributed**: Any service can validate tokens independently
+- **Secure**: Digitally signed to prevent tampering
+- **Scalable**: Services can scale horizontally without session replication
+
+**Flow**:
+1. User logs in → User Service validates credentials
+2. User Service generates JWT with user info + expiration
+3. Client includes JWT in `Authorization: Bearer <token>` header
+4. Each service validates JWT signature independently
+5. No database lookup needed for authentication
+
+**Benefits**:
+- **Scalability**: No shared session state required
+- **Performance**: No database calls for auth checks
+- **Decentralized**: Services are independent
+- **Security**: Tokens expire and can be revoked
+
+### Why MapStruct for DTO Mapping?
+
+**Problem**: Manual DTO mapping is tedious and error-prone:
+```java
+// Manual mapping - lots of boilerplate, easy to miss fields
+UserResponse response = new UserResponse();
+response.setId(user.getId());
+response.setUsername(user.getUsername());
+response.setEmail(user.getEmail());
+// ... 15 more fields
+```
+
+**Solution**: MapStruct generates mapping code at compile-time:
+```java
+@Mapper(componentModel = "spring")
+public interface UserMapper {
+    UserResponse toUserResponse(User user);
+}
+```
+
+**Benefits**:
+- **Type-Safe**: Compile-time checking catches missing fields
+- **Performance**: No reflection, plain Java method calls
+- **Maintainable**: Change entity → mapper updates automatically
+- **Less Code**: 10 lines instead of 100+
+- **Spring Integration**: Works as Spring beans with dependency injection
+
+### Why Standardized API Responses?
+
+**Problem**: Inconsistent response formats across services:
+- User Service returns `{ "id": 1, "name": "John" }`
+- Product Service returns `{ "data": {...}, "status": "success" }`
+- Error formats differ between services
+
+**Solution**: `ApiResponse<T>` wrapper provides consistency:
+```json
+{
+  "success": true,
+  "message": "Operation successful",
+  "data": { /* actual payload */ },
+  "timestamp": "2026-01-09T10:30:00"
+}
+```
+
+**Benefits**:
+- **Consistency**: All responses follow same structure
+- **Client Simplicity**: Frontend can parse all responses the same way
+- **Metadata**: Timestamp, request IDs for debugging
+- **Error Handling**: Unified error format with field-level validation
+- **Versioning**: Easy to add new metadata fields without breaking clients
+
+### Why API Versioning?
+
+**Problem**: APIs evolve, but clients expect stability:
+- Breaking changes force all clients to update simultaneously
+- Can't A/B test new API versions
+- Difficult to maintain backward compatibility
+
+**Solution**: URL-based versioning (`/api/v1/`, `/api/v2/`):
+- **Backward Compatibility**: Old clients continue using `/api/v1/`
+- **Gradual Migration**: New clients adopt `/api/v2/` at their pace
+- **Clear Documentation**: Version is visible in the URL
+- **Easy Routing**: Gateway can route to different service versions
+
+**Benefits**:
+- **No Breaking Changes**: Clients update when ready
+- **Parallel Development**: Can develop v2 while v1 is stable
+- **Testing**: A/B test new versions with subset of users
+- **Deprecation**: Clearly communicate when versions will be retired
 
 ## Prerequisites
 - Java 17 or higher
