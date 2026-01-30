@@ -4,6 +4,7 @@ import com.microservices.product.dto.ProductRequest;
 import com.microservices.product.dto.ProductResponse;
 import com.microservices.product.entity.Product;
 import com.microservices.product.repository.ProductRepository;
+import com.microservices.common.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -72,7 +73,7 @@ public class ProductService {
 
     public void deleteProduct(Long id) {
         if (!productRepository.existsById(id)) {
-            throw new RuntimeException("Product not found with id: " + id);
+            throw new ResourceNotFoundException("Product", id.toString());
         }
         productRepository.deleteById(id);
     }
