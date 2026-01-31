@@ -21,6 +21,7 @@
     </parent>
 
     <modules>
+        <module>common-lib</module>
         <module>eureka-server</module>
         <module>api-gateway</module>
         <module>user-service</module>
